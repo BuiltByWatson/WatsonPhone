@@ -40,7 +40,7 @@ class Credentials implements CredentialsInterface
 	 * @param (string) $auth_id; authentication id
 	 * @param (string) $auth_token; authentication token
 	 */
-	public function __construct( $auth_id, $auth_token, $type = 0 )
+	public function __construct( $auth_id, $auth_token, $testaccount = false )
 	{
 		if(!isset($auth_id) || empty($auth_id) || (!$auth_id)) {
 			throw new Exception("No valid authentication id.");
@@ -52,7 +52,6 @@ class Credentials implements CredentialsInterface
 		
 		$this->auth_id    = $auth_id;
 		$this->auth_token = $auth_token;
-		$this->type       = $type;
 	}
 	
 	/**
@@ -76,6 +75,7 @@ class Credentials implements CredentialsInterface
 	{
 		return $this->auth_token;
 	}
+	
 	
 	/**
 	 * getCredentialType

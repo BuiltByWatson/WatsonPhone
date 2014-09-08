@@ -60,7 +60,7 @@ abstract class AbstractClient implements ClientInterface
      * @param array $headers
      */
     public function normalizeHeaders(&$headers)
-    {
+    {    
         // Normalize headers
         array_walk(
             $headers,

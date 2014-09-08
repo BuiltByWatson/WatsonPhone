@@ -12,10 +12,7 @@
 namespace WatsonPhone\Services;
 
 use WatsonPhone\Domains\DomainObjectFactory;
-
-use WatsonPhone\Helper\Call as HelperCall;
-use WatsonPhone\Helper\Messages as HelperMessages;
-use WatsonPhone\Helper\Account as HelperAccount;
+use WatsonPhone\WatsonResources\ResourcesFactory;
 
 use WatsonPhone\Common\Credentials\CredentialsInterface;
 use WatsonPhone\Common\Http\Client\ClientInterface;
@@ -27,6 +24,9 @@ abstract class AbstractService implements ServiceInterface
 {
 	//@var DomainObjectFactory $domainObjectFactory; domain object factory
 	protected $domainObjectFactory;
+	
+	//@var ResourcesFactory $resourcesFactory; WatsonResources object factory
+	protected $resourcesFactory;
 	
 	
 	//@var CredentialsInterface $credentials; service credentials
@@ -51,51 +51,149 @@ abstract class AbstractService implements ServiceInterface
 		CredentialsInterface $credentials,
 		ClientInterface $httpClient,
 		UriInterface $baseApiUri = null
-	) {
-
-		$this->domainObjectFactory = new DomainObjectFactory();
-	
+	){
+		// setup api requirements
 		$this->credentials = $credentials;
 		$this->httpClient  = $httpClient;
 		$this->baseApiUri  = $baseApiUri;
+		
+		// setup factories
+		$this->domainObjectFactory = new DomainObjectFactory();
+		$this->resourcesFactory    = new ResourcesFactory( $this->domainObjectFactory,
+														   $this->httpClient );
 	}
+	
+	/**
+	 * getAuthenticationHeaders()
+	 * Returns a base64_encoded string containing the auth_id and auth_token as
+	 * username and password. It's used as basic authentication for most services.
+	 *
+	 * @return (array) $authHeaders; extra header settings.
+	 */
+	public function getAuthenticationHeaders()
+	{		
+		return array(
+			'Authorization' => 'Basic '.base64_encode($this->credentials->getAuthId().":".
+													$this->credentials->getAuthToken())
+		);
+	}
+	
+	/**
+	 * Mandatory Service Functions
+	 */
 
 	/**
 	 * account function
+	 * This function is part of the abstract service interface, it's mandatory for
+	 * all services in this library.
 	 */
-	 public function account($auth_id = null)
-	 {
-	 	if(!$auth_id) {
-	 		$auth_id = $this->credentials->getAuthId();
+	 public function account( 
+	 	$account_id = null,
+	 	$additionalParameters = array(), 
+	 	$method = "GET"
+	 ){
+	 	if(!$account_id) {
+	 		$account_id = $this->credentials->getAuthId();
 	 	}
 	 
-	 	$accountDomain = $this->domainObjectFactory->build('Account');
-	 	$accountDomain->setAccountId($auth_id);
+	 	// setup account domain object
+	 	$accountDomainObject = $this->domainObjectFactory->build('Accounts'); 	
 	 	
-	 	$response = $this->httpClient->retrieveResponse(
-	 		$this->getAccountApiUri(),
-	 		""
-	 	);
+	 	$accountDomainObject->setAccountId($account_id);
+	 	$accountDomainObject->setAccountUri($this->getAccountApiUri($account_id));
+	 	
+	 	// setup the url
+	 	$parameters = array_merge(
+			$additionalParameters,
+			$this->getAccountAdditionalParameters()
+		);
+		
+		$url = clone $accountDomainObject->getAccountUri();
+ 		foreach($parameters as $key => $value) {
+ 			$url->addToQuery($key, $value);
+ 		}
+	 	
+		// make http request
+	 	try
+	 	{
+	 		$response = $this->httpClient->retrieveResponse(
+	 			$url,
+	 			null, // request body
+	 			array_merge(
+	 				$this->getAccountExtraHeaders(),
+	 				$this->getAuthenticationHeaders()
+	 			),
+	 			$method
+	 		);
+	 	} catch(Exception $e) { // request failed
+	 		echo "WatsonPhone request failed: {$e->getMessage()}"; exit;
+	 	}
 
-	 	return array($accountDomain, $response);
+
+		// parse response & setup account resource
+		$accountDomain   = $this->parseAccountResponse($accountDomainObject, $response);
+	 	$accountResource = $this->resourcesFactory->build('Accounts', $accountDomainObject);
+	 	
+	 	// register subresources
+	 	//$accountResource->registerSubresources();
+
+	 	return $accountResource;
 	 }
-
-	/**
-	 * createSubaccount function
-	 */
-	public function createSubaccount()
-	{
-	
-	}
 
 	/**
 	 * call function
 	 */
-	public function call()
-	{
-		$callDomain = $this->domainObjectFactory->build('Call');
-		$callHelper = new HelperCall( $callDomain );
+	public function call(
+		$call_id = null,
+		$account_id = null,
+		$additionalParameters = array(), 
+		$method = "GET"
+	){
 		
-		return $callDomain;
+		$account_id = ($account_id === null ? $this->credentials->getAuthId() : $account_id);
+	
+		// setup call domain
+		$callDomain = $this->domainObjectFactory->build('Calls');
+		$callDomain->setCallId($call_id);
+		
+		// setup the url
+		$parameters = array_merge(
+	 		$this->getCallAdditionalParameters(), $additionalParameters
+	 	);
+	 	
+		$url = clone $this->getCallApiUri($account_id, $call_id);
+ 		foreach($parameters as $key => $value) {
+ 			$url->addToQuery($key, $value);
+ 		}
+		
+		// make http request
+	 	try
+	 	{
+	 		$response = $this->httpClient->retrieveResponse(
+	 			$url,
+	 			null,
+	 			array_merge(
+	 				$this->getAccountExtraHeaders(),
+	 				$this->getAuthenticationHeaders()
+	 			),
+	 			$method
+	 		);
+	 	} catch(Exception $e) {
+	 		echo "WatsonPhone request failed: {$e->getMessage()}"; exit;
+	 	}
+				
+		// parse response
+		$callDomain = $this->parseCallResponse($callDomain, $response);
+		$callResource  = $this->resourcesFactory->build('Calls', $callDomain);
+				
+		return $callResource;
+	}
+	
+	/**
+	 * messages function
+	 */
+	public function message( array $addtionalParameters = array() )
+	{
+		
 	}
 }

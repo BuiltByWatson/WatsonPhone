@@ -29,7 +29,7 @@ class StreamClient extends AbstractClient
         $requestBody,
         array $extraHeaders = array(),
         $method = 'POST'
-    ) {
+    ){
         // Normalize method name
         $method = strtoupper($method);
 

@@ -38,12 +38,4 @@ interface CredentialsInterface
 	 * @return $this->auth_token;
 	 */
 	public function getAuthToken();
-	
-	/**
-	 * getCredentialType
-	 * returns type
-	 *
-	 * @return $this->type;
-	 */
-	public function getCredentialType();
 }

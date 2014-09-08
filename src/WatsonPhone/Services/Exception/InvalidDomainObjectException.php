@@ -1,6 +1,6 @@
 <?php
 
-namespace WatsonPhone\Helper\Exception;
+namespace WatsonPhone\Services\Exception;
 
 use WatsonPhone\Common\Exception\Exception;
 

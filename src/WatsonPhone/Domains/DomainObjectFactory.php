@@ -24,7 +24,7 @@ class DomainObjectFactory
 		$className = __NAMESPACE__ . "\\" . $name;
 		$instance = new $className();
 
-		if( method_exists($instance, 'prepare') ) // is_callable was replaced by method_exists
+		if(method_exists($instance, 'prepare')) // is_callable was replaced by method_exists
 		{
 			$instance->prepare();
 		}

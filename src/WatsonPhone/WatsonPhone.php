@@ -14,8 +14,11 @@
 namespace WatsonPhone;
 
 use WatsonPhone\Common\Credentials\CredentialsInterface;
+
 use WatsonPhone\Common\Http\Client\ClientInterface;
 use WatsonPhone\Common\Http\Client\StreamClient;
+use WatsonPhone\Common\Http\Client\CurlClient;
+
 use WatsonPhone\Common\Http\Uri\UriInterface;
 use WatsonPhone\Common\Exception\Exception;
 
@@ -24,6 +27,14 @@ class WatsonPhone
 {
 	//@var ClientInterface $httpClient; http client compliant to the clientinterface
 	protected $httpClient;
+
+	
+	public function __construct( ClientInterface $httpClient = null )
+	{
+		if($httpClient != null) {
+			$this->httpClient = $httpClient;
+		}
+	}
 
 	/**
 	 * setHttpClient

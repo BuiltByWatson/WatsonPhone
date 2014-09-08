@@ -30,4 +30,18 @@ interface ServiceInterface
 		ClientInterface $httpClient,
 		UriInterface $baseApiUri = null
 	);
+	
+	/**
+	 * account function
+	 * This function is part of the abstract service interface, it's manditory for
+	 * all services in this library.
+	 */
+	 //public function account( array $additionalParameters = array(), $method = "GET" );
+	 
+	 /**
+	  * call function
+	  * This function is part of the abstract service interface, it's manditory for
+	  * all services in this library.
+	  */
+	 //public function call( array $additionalParameters = array(), $method = "GET" );
 }
